@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Archivos a NextCloud</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .drop-zone {
+            border: 2px dashed #007bff;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            color: #007bff;
+        }
+        .drop-zone.dragover {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container my-5">
+    <h2 class="text-center">Subir Archivos a NextCloud</h2>
+
+    <!-- Formulario para subir archivos manualmente -->
+    <div class="card p-4 my-4">
+        <h5>Subir Archivo</h5>
+        <form id="uploadForm">
+            <div class="form-group">
+                <input type="file" id="fileInput" class="form-control" accept=".gif, .jpg, .png" multiple required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Subir Archivo</button>
+        </form>
+    </div>
+
+    <!-- Zona de arrastrar y soltar -->
+    <div class="drop-zone mt-4">
+        <p>Arrastra y suelta archivos aquí o haz clic para seleccionarlos</p>
+        <input type="file" id="dragFileInput" class="d-none" accept=".gif, .jpg, .png" multiple>
+    </div>
+
+    <!-- Mensajes de estado -->
+    <div id="result" class="alert mt-3 d-none"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function () {
+    const allowedExtensions = ["gif", "jpg", "png"]; // Extensiones permitidas
+
+    // Función para manejar la subida de archivos
+    function uploadFile(file) {
+        if (!file) return;
+
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+
+        // Validar extensión del archivo
+        if (!allowedExtensions.includes(fileExtension)) {
+            $("#result").removeClass("d-none alert-success").addClass("alert-danger")
+                .text("Error: El archivo " + file.name + " tiene una extensión no permitida.")
+                .show();
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", file);
+
+        console.log("Archivo seleccionado:", file.name);
+
+        // Enviar datos al backend
+        $.ajax({
+            url: "http://192.168.203.254/controller.php",
+            method: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+                console.log("Respuesta del servidor:", response);
+                $("#result").removeClass("d-none alert-danger").addClass("alert-success")
+                    .append("<p>Subido correctamente: " + file.name + "</p>")
+                    .show();
+            },
+            error: function (xhr) {
+                console.error("Error en la solicitud:", xhr.responseText);
+                $("#result").removeClass("d-none alert-success").addClass("alert-danger")
+                    .append("<p>Error al subir el archivo " + file.name + ": " + xhr.responseText + "</p>")
+                    .show();
+            },
+        });
+    }
+
+    // Envío manual del formulario
+    $("#uploadForm").on("submit", function (e) {
+        e.preventDefault();
+        let files = $("#fileInput")[0].files;
+
+        // Subir cada archivo seleccionado
+        for (let i = 0; i < files.length; i++) {
+            uploadFile(files[i]);
+        }
+    });
+
+    // Arrastrar y soltar archivos
+    let dropZone = $(".drop-zone");
+
+    dropZone.on("dragover", function (e) {
+        e.preventDefault();
+        dropZone.addClass("dragover");
+    });
+
+    dropZone.on("dragleave", function () {
+        dropZone.removeClass("dragover");
+    });
+
+    dropZone.on("drop", function (e) {
+        e.preventDefault();
+        dropZone.removeClass("dragover");
+        let files = e.originalEvent.dataTransfer.files;
+
+        // Subir cada archivo arrastrado
+        for (let i = 0; i < files.length; i++) {
+            uploadFile(files[i]);
+        }
+    });
+
+    // Hacer clic en la zona de arrastre para abrir el selector de archivos
+    dropZone.on("click", function () {
+        $("#dragFileInput").click();
+    });
+
+    // Subir archivos seleccionados con el input oculto
+    $("#dragFileInput").on("change", function () {
+        let files = this.files;
+
+        // Subir cada archivo seleccionado
+        for (let i = 0; i < files.length; i++) {
+            uploadFile(files[i]);
+        }
+    });
+});
+</script>
+
+</body>
+</html>
