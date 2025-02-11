@@ -54,6 +54,9 @@ curl_setopt($ch, CURLOPT_PUT, true);
 curl_setopt($ch, CURLOPT_INFILE, $fp);
 curl_setopt($ch, CURLOPT_INFILESIZE, filesize($file["tmp_name"]));
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_TIMEOUT, 300);  // Espera hasta 5 minutos si es necesario
+curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1024);
+curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 30);
 
 $response = curl_exec($ch);
 $http_status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
