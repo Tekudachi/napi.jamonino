@@ -20,6 +20,7 @@ $original_name = pathinfo($file["name"], PATHINFO_FILENAME);
 $extension = pathinfo($file["name"], PATHINFO_EXTENSION);
 $allowed_extensions = ["gif", "jpg", "png"];
 
+// Validar extensión del archivo
 if (!in_array($extension, $allowed_extensions)) {
     echo json_encode(["error" => "Formato de archivo no permitido.", "status" => 400]);
     exit;
@@ -29,9 +30,9 @@ if (!in_array($extension, $allowed_extensions)) {
 $original_name = preg_replace('/[^a-zA-Z0-9_-]/', '_', $original_name);
 
 // **Generar ruta de almacenamiento**
-$timestamp = time();  // Evita colisiones de nombres
+$uuid = generateUUID();  // Genera un UUID
 $folder_path = "$extension/" . date("Y") . "/" . date("m") . "/" . date("d") . "/";
-$file_name = "$timestamp-$original_name.$extension";
+$file_name = "$uuid-$original_name.$extension";
 $file_path = $folder_path . rawurlencode($file_name); // Codificar el nombre del archivo
 
 // **PASO 1: Crear la estructura de directorios en NextCloud**
@@ -77,7 +78,7 @@ if ($http_status === 201) {
 }
 
 /**
- * 📌 Crear directorio en NextCloud si no existe (uno por uno)
+ * 📁 Crear directorio en NextCloud si no existe (uno por uno)
  */
 function createFolder($folder_url, $user, $pass) {
     $ch = curl_init();
@@ -100,3 +101,14 @@ function createFolder($folder_url, $user, $pass) {
         exit;
     }
 }
+
+/**
+ * 🔑 Generar UUID versión 4
+ */
+function generateUUID() {
+    $data = random_bytes(16);
+    $data[6] = chr((ord($data[6]) & 0x0f) | 0x40); // versión 4
+    $data[8] = chr((ord($data[8]) & 0x3f) | 0x80); // variante
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
